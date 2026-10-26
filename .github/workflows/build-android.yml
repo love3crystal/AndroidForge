@@ -1,4 +1,4 @@
-name: Build Android APK
+: Build Android APK
 
 # AndroidForge — Universal Android APK Builder
 #
@@ -89,7 +89,7 @@ env:
   # These point to paths baked into the Docker image.
   ANDROID_HOME: /opt/android-sdk
   ANDROID_SDK_ROOT: /opt/android-sdk
-  JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+  JAVA_HOME: /usr/lib/jvm/java-21-openjdk-amd64
   GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.caching=false"
   PYTHONUNBUFFERED: "1"
 
@@ -108,7 +108,7 @@ jobs:
     # GHCR normalizes the image name to lowercase, so we use the lowercase
     # owner here. If you fork the repo, update this to your-lowercase-username
     # OR override the env var IMAGE_REF below.
-    container: ghcr.io/professional-x/androidforge-build-env:latest
+    container: ghcr.io/love3crystal/androidforge-build-env:latest
     timeout-minutes: 60
     outputs:
       project_type: ${{ steps.detect.outputs.project_type }}
