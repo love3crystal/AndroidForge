@@ -65,7 +65,8 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive.key \
 #    Default JAVA_HOME points to JDK 17 (the AGP 8.x requirement).
 # -----------------------------------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      openjdk-8-jdk openjdk-11-jdk openjdk-17-jdk \
+      openjdk-8-jdk openjdk-11-jdk openjdk-17-jdk
+openjdk-21-jdk\
     && rm -rf /var/lib/apt/lists/*
 
 ENV JAVA_HOME_8=/usr/lib/jvm/java-8-openjdk-amd64
