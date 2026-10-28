@@ -378,6 +378,54 @@ jobs:
           cat "$GITHUB_WORKSPACE/collect.json"
 
       # ---------------------------------------------------------------------
+      - name: Set up Android signing tools
+        uses: android-actions/setup-android@v3
+
+      - name: Sign and verify APKs
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_PASSWORD"
+
+          sdkmanager --install "build-tools;35.0.0"
+
+          KEYSTORE="$RUNNER_TEMP/calculator-release.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          test -x "$APKSIGNER"
+
+          found=0
+          while IFS= read -r -d '' apk; do
+            found=1
+            signed="${apk%.apk}-signed.apk"
+
+            "$APKSIGNER" sign \
+              --ks "$KEYSTORE" \
+              --ks-key-alias calculator \
+              --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
+              --key-pass env:ANDROID_KEY_PASSWORD \
+              --out "$signed" \
+              "$apk"
+
+            "$APKSIGNER" verify --verbose "$signed"
+            mv "$signed" "$apk"
+          done < <(find "$GITHUB_WORKSPACE/output" -type f -name '*.apk' -print0)
+
+          if [ "$found" -ne 1 ]; then
+            echo "ERROR: No APK files found in output directory."
+            exit 1
+          fi
+
+          rm -f "$KEYSTORE"
+      # ---------------------------------------------------------------------
       # Step 13: Upload APK artifact
       # ---------------------------------------------------------------------
       - name: Upload APK artifact
