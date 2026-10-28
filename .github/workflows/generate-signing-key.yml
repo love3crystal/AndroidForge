@@ -1,0 +1,39 @@
+name: Generate Android Signing Key
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate keystore
+        env:
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -e
+          test -n "$STORE_PASSWORD"
+          test -n "$KEY_PASSWORD"
+
+          keytool -genkeypair \
+            -keystore calculator-release.jks \
+            -storepass "$STORE_PASSWORD" \
+            -keypass "$KEY_PASSWORD" \
+            -alias calculator \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Calculator, OU=Apps, O=Personal, L=Unknown, ST=Unknown, C=US"
+
+          base64 -w 0 calculator-release.jks > keystore-base64.txt
+
+      - name: Upload encoded keystore
+        uses: actions/upload-artifact@v4
+        with:
+          name: calculator-signing-key
+          path: keystore-base64.txt
+          retention-days: 1
