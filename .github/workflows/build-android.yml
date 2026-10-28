@@ -380,6 +380,8 @@ jobs:
       # ---------------------------------------------------------------------
       - name: Set up Android signing tools
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Sign and verify APKs
         env:
