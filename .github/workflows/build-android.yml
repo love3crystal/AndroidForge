@@ -139,7 +139,7 @@ jobs:
             --source "${{ inputs.zip_source || 'input-directory' }}" \
             --url "${{ inputs.zip_url }}" \
             --tag "${{ inputs.release_tag }}" \
-            --path "${{ inputs.zip_path }}"
+            --path "input/ycqjsq.zip"
 
       # ---------------------------------------------------------------------
       # Step 2: Extract ZIP
