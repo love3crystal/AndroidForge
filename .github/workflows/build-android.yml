@@ -326,6 +326,21 @@ jobs:
           fi
 
       # ---------------------------------------------------------------------
+      - name: Upgrade Gradle for Flutter
+        if: steps.toolchain.outputs.needs_flutter == 'true'
+        run: |
+          GRADLE_DIR=/opt/gradle-8.14.3
+          if [ ! -x "$GRADLE_DIR/bin/gradle" ]; then
+            wget -q https://services.gradle.org/distributions/gradle-8.14.3-bin.zip -O /tmp/gradle-8.14.3-bin.zip
+            unzip -q /tmp/gradle-8.14.3-bin.zip -d /opt
+          fi
+          echo "$GRADLE_DIR/bin" >> "$GITHUB_PATH"
+          PROJECT_ROOT="${{ steps.extract.outputs.project_root }}"
+          WRAPPER="$PROJECT_ROOT/android/gradle/wrapper/gradle-wrapper.properties"
+          if [ -f "$WRAPPER" ]; then
+            sed -i -E 's/gradle-[0-9.]+-(bin|all)\.zip/gradle-8.14.3-\1.zip/' "$WRAPPER"
+          fi
+          "$GRADLE_DIR/bin/gradle" --version
       # Step 11: Build the project (writes build.json)
       # ---------------------------------------------------------------------
       - name: Build project
