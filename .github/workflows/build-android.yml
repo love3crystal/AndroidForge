@@ -178,7 +178,7 @@ jobs:
           if gradle.exists():
               s = gradle.read_text(encoding="utf-8")
               if "isMinifyEnabled = true" not in s:
-                  s = s.replace("release {", "release {\\n            isMinifyEnabled = true\\n            isShrinkResources = true", 1)
+                  s = s.replace("release {", "release {" + chr(10) + "            isMinifyEnabled = true" + chr(10) + "            isShrinkResources = true", 1)
                   gradle.write_text(s, encoding="utf-8")
           bg = app / "src/main/res/drawable/ic_launcher_background.xml"
           if bg.exists():
