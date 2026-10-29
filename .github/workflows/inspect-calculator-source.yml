@@ -1,0 +1,36 @@
+name: Inspect Calculator Source ZIP
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    name: List calculator source files
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify source ZIP
+        run: |
+          test -f input/ycqjsq.zip
+          echo "ZIP found:"
+          ls -lh input/ycqjsq.zip
+
+      - name: List source paths and likely UI files
+        shell: bash
+        run: |
+          set -e
+          echo "===== PROJECT FILES ====="
+          unzip -Z1 input/ycqjsq.zip | grep -Ei '\.(kt|java|xml|gradle|kts|dart|json)$' | head -n 300 || true
+          echo "===== TOP LEVEL ====="
+          unzip -Z1 input/ycqjsq.zip | awk -F/ 'NF {print $1}' | sort -u | head -n 80
+          echo "===== CALCULATOR / HISTORY / DELETE REFERENCES ====="
+          unzip -Z1 input/ycqjsq.zip | grep -E '\.(kt|java|xml|dart)$' | while IFS= read -r f; do
+            unzip -p input/ycqjsq.zip "$f" 2>/dev/null | grep -Ein 'history|backspace|delete|calculator|计算器|数字键' | head -n 20 | sed "s#^#$f:#" || true
+          done | head -n 180 || true
+          echo "Inspection only: no source files were modified."
