@@ -152,7 +152,7 @@ jobs:
         run: python3 scripts/extract_zip.py --zip "${{ steps.acquire.outputs.zip_path }}"
 
       - name: Apply GLR branding to calculator project
-        if: steps.detect.outputs.project_type == 'gradle'
+        if: steps.extract.outputs.project_root != ''
         shell: bash
         run: |
           ROOT="${{ steps.extract.outputs.project_root }}"
