@@ -291,6 +291,24 @@ jobs:
           ''', encoding="utf-8")
           print("GLR branding applied to", root)
           print("GLR post-patch verification enabled in workflow")
+          # Stop the release if the requested changes were not actually applied.
+          checks = {
+              "backspace": "Key.Backspace" in keypad.read_text(encoding="utf-8"),
+              "trash key": 'Key.Function("clearall", "🗑")' in keypad.read_text(encoding="utf-8"),
+              "double zero": 'Key.Symbol("00")' in keypad.read_text(encoding="utf-8") and 'key.label == "00"' in keypad.read_text(encoding="utf-8"),
+              "clear tape only": "BasicCalculatorEvent.ClearTape" in keypad.read_text(encoding="utf-8") and "data object ClearTape" in ui_state.read_text(encoding="utf-8") and "BasicCalculatorEvent.ClearTape -> tapeStore.clear()" in vm.read_text(encoding="utf-8"),
+              "app name": "格拉瑞计算器" in (app / "src/main/res/values/strings.xml").read_text(encoding="utf-8"),
+              "version prefix": 'value = "GLR \\${BuildConfig.VERSION_NAME} (\\${BuildConfig.VERSION_CODE})"' in settings.read_text(encoding="utf-8"),
+              "license prefix": 'value = "GLR · Apache 2.0"' in settings.read_text(encoding="utf-8"),
+              "GitHub URL": "https://github.com/love3crystal/AndroidForge" in settings.read_text(encoding="utf-8"),
+              "launcher icon": "GLR" in (app / "src/main/res/drawable/ic_launcher_foreground.xml").read_text(encoding="utf-8") or "pathData=" in (app / "src/main/res/drawable/ic_launcher_foreground.xml").read_text(encoding="utf-8"),
+              "APK shrinking": "isMinifyEnabled = true" in gradle.read_text(encoding="utf-8") and "isShrinkResources = true" in gradle.read_text(encoding="utf-8"),
+          }
+          for name, passed in checks.items():
+              print(("PASS" if passed else "FAIL") + " GLR check: " + name)
+          failed = [name for name, passed in checks.items() if not passed]
+          if failed:
+              raise SystemExit("Refusing to publish APK; GLR checks failed: " + ", ".join(failed))
           PY
 
       # ---------------------------------------------------------------------
