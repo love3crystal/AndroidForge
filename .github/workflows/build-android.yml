@@ -276,10 +276,10 @@ jobs:
               fg.write_text('''<?xml version="1.0" encoding="utf-8"?>
           <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
               <!-- Bold, separated GLR block letters with safe margins for adaptive-icon masking. -->
-              <path android:fillColor="#FFFFFFFF" android:pathData="M12,28h8v44h-8z M12,28h30v8H12z M12,64h30v8H12z M34,46h8v26h-8z M26,46h16v8H26z"/>
-              <path android:fillColor="#FFFFFFFF" android:pathData="M48,28h8v36h14v8H48z"/>
-              <path android:fillColor="#FFFFFFFF" android:pathData="M76,28h8v44h-8z M76,28h23v8H76z M91,28h8v25h-8z M76,45h23v8H76z M82,49h9l13,23h-9z"/>
-              <path android:fillColor="#1769E0" android:pathData="M84,36h7v9h-7z"/>
+              <path android:fillColor="#FFFFFFFF" android:pathData="M18,30h7v40h-7z M18,30h20v7H18z M18,63h20v7H18z M31,48h7v22h-7z M27,48h11v7H27z"/>
+              <path android:fillColor="#FFFFFFFF" android:pathData="M42,30h7v33h11v7H42z"/>
+              <path android:fillColor="#FFFFFFFF" android:pathData="M64,30h7v40h-7z M64,30h26v7H64z M83,30h7v23h-7z M64,46h26v7H64z M70,50h8l11,20h-8z"/>
+              <path android:fillColor="#1769E0" android:pathData="M72,37h11v9H72z"/>
           </vector>
           ''', encoding="utf-8")
           print("GLR branding applied to", root)
