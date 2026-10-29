@@ -162,18 +162,28 @@ jobs:
           root = Path(sys.argv[1])
           app = root / "app"
 
-          # Patch the actual calculator keypad, not only the app branding.
-          keypad = app / "src/main/java/com/calculator/feature/basic/ui/CalculatorKeypad.kt"
-          if keypad.exists():
+          # Patch every matching source file. This project may keep the real UI in a feature module,
+          # not under app/src/main; patching only the app copy can produce an APK with unchanged UI.
+          import textwrap, re
+          keypad_candidates = [p for p in root.rglob("CalculatorKeypad.kt") if "/src/main/" in p.as_posix()]
+          state_candidates = [p for p in root.rglob("BasicCalculatorUiState.kt") if "/src/main/" in p.as_posix()]
+          vm_candidates = [p for p in root.rglob("BasicCalculatorViewModel.kt") if "/src/main/" in p.as_posix()]
+          if not keypad_candidates:
+              raise SystemExit("No main-source CalculatorKeypad.kt found; refusing to build.")
+          if not state_candidates or not vm_candidates:
+              raise SystemExit("Calculator UI state/view-model source not found; refusing to build.")
+          print("CalculatorKeypad candidates:", [p.as_posix() for p in keypad_candidates])
+          print("UI state candidates:", [p.as_posix() for p in state_candidates])
+          print("View-model candidates:", [p.as_posix() for p in vm_candidates])
+
+          def patch_keypad_file(keypad):
               k = keypad.read_text(encoding="utf-8")
               k = k.replace(
                   'KeypadRowSpec(listOf(Key.Clear, Key.SignFlip, Key.Symbol("%"), Key.Symbol("÷")), compact = true),',
-                  'KeypadRowSpec(listOf(Key.Clear, Key.Backspace, Key.SignFlip, Key.Symbol("%"), Key.Symbol("÷")), compact = true),'
+                  'KeypadRowSpec(listOf(Key.Clear, Key.Backspace, Key.SignFlip, Key.Symbol("%"), Key.Symbol("÷")), compact = true)'
               )
-              import textwrap, re
-              new_bottom = "\n".join("            " + line for line in textwrap.dedent("""
+              new_bottom = "\\n".join("            " + line for line in textwrap.dedent("""
                   // Five equal-width keys: history trash, double-zero, zero, decimal, equals.
-                  // The 0 key is now the same width as the other keys.
                   Row(
                       modifier = Modifier.fillMaxWidth(),
                       horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -209,39 +219,57 @@ jobs:
                           modifier = Modifier.weight(1f).keySize(BUTTON_ASPECT_RATIO_COMPACT, minKeyHeight),
                       )
                   }
-              """).strip("\n").splitlines())
-              k, bottom_count = re.subn(r"(?ms)^ {12}// Bottom iOS-style row:.*?^ {12}\}", lambda _: new_bottom, k, count=1)
+              """).strip("\\n").splitlines())
+              k, bottom_count = re.subn(r"(?ms)^ {12}// Bottom iOS-style row:.*?^ {12}\\}", lambda _: new_bottom, k, count=1)
               if bottom_count != 1:
-                  raise SystemExit("Could not safely replace calculator bottom row; refusing to build without all requested keys.")
-              k = k.replace(
-                  'is Key.Symbol -> onEvent(BasicCalculatorEvent.Append(key.label))',
-                  'is Key.Symbol -> if (key.label == "00") { onEvent(BasicCalculatorEvent.Append("0")); onEvent(BasicCalculatorEvent.Append("0")) } else onEvent(BasicCalculatorEvent.Append(key.label))'
-              )
-              k = k.replace(
-                  'is Key.Function -> onEvent(BasicCalculatorEvent.Append("${key.keyword}("))',
-                  'is Key.Function -> if (key.keyword == "clearall") onEvent(BasicCalculatorEvent.ClearTape) else onEvent(BasicCalculatorEvent.Append("${key.keyword}("))'
-              )
+                  if "Five equal-width keys: history trash, double-zero, zero, decimal, equals." not in k:
+                      raise SystemExit(f"{keypad}: could not replace bottom row; refusing to build.")
+              old_symbol = 'is Key.Symbol -> onEvent(BasicCalculatorEvent.Append(key.label))'
+              new_symbol = 'is Key.Symbol -> if (key.label == "00") { onEvent(BasicCalculatorEvent.Append("0")); onEvent(BasicCalculatorEvent.Append("0")) } else onEvent(BasicCalculatorEvent.Append(key.label))'
+              if old_symbol in k:
+                  k = k.replace(old_symbol, new_symbol, 1)
+              elif new_symbol not in k:
+                  raise SystemExit(f"{keypad}: symbol dispatch pattern not found; refusing to build.")
+              old_function = 'is Key.Function -> onEvent(BasicCalculatorEvent.Append("\\${key.keyword}("))'
+              new_function = 'is Key.Function -> if (key.keyword == "clearall") onEvent(BasicCalculatorEvent.ClearTape) else onEvent(BasicCalculatorEvent.Append("\\${key.keyword}("))'
+              if old_function in k:
+                  k = k.replace(old_function, new_function, 1)
+              elif new_function not in k:
+                  raise SystemExit(f"{keypad}: function dispatch pattern not found; refusing to build.")
               keypad.write_text(k, encoding="utf-8")
+              # Strong source-level assertions: exactly five weighted bottom-row keys and a single-width zero.
+              bottom = k.split("Five equal-width keys: history trash, double-zero, zero, decimal, equals.", 1)[-1]
+              bottom = bottom.split("// Bottom iOS-style row:", 1)[0]
+              if bottom.count("KeyButton(") < 5 or 'key = Key.Symbol("0")' not in bottom:
+                  raise SystemExit(f"{keypad}: bottom row assertions failed.")
+              zero_part = bottom.split('key = Key.Symbol("0")', 1)[1].split("KeyButton(", 1)[0]
+              if "Modifier.weight(1f)" not in zero_part:
+                  raise SystemExit(f"{keypad}: zero key is not constrained to one equal-width column.")
+              print("PATCHED keypad:", keypad)
 
-          # Add a tape-only clear event so the trash key does not erase the current expression.
-          ui_state = app / "src/main/java/com/calculator/feature/basic/ui/BasicCalculatorUiState.kt"
-          if ui_state.exists():
+          for keypad_file in keypad_candidates:
+              patch_keypad_file(keypad_file)
+          keypad = keypad_candidates[0]
+
+          for ui_state in state_candidates:
               u = ui_state.read_text(encoding="utf-8")
               if "data object ClearTape" not in u:
                   u = u.replace(
-                      '    data object ClearAll : BasicCalculatorEvent\n',
-                      '    data object ClearAll : BasicCalculatorEvent\n\n    /** Clear only the visible calculation tape, preserving the current expression. */\n    data object ClearTape : BasicCalculatorEvent\n'
+                      '    data object ClearAll : BasicCalculatorEvent\\n',
+                      '    data object ClearAll : BasicCalculatorEvent\\n\\n    /** Clear only the visible calculation tape, preserving the current expression. */\\n    data object ClearTape : BasicCalculatorEvent\\n'
                   )
               ui_state.write_text(u, encoding="utf-8")
-          vm = app / "src/main/java/com/calculator/feature/basic/ui/BasicCalculatorViewModel.kt"
-          if vm.exists():
+          ui_state = state_candidates[0]
+
+          for vm in vm_candidates:
               v = vm.read_text(encoding="utf-8")
               if "BasicCalculatorEvent.ClearTape -> tapeStore.clear()" not in v:
                   v = v.replace(
-                      '                BasicCalculatorEvent.Clear -> clear()\n',
-                      '                BasicCalculatorEvent.Clear -> clear()\n                BasicCalculatorEvent.ClearTape -> tapeStore.clear()\n'
+                      '                BasicCalculatorEvent.Clear -> clear()\\n',
+                      '                BasicCalculatorEvent.Clear -> clear()\\n                BasicCalculatorEvent.ClearTape -> tapeStore.clear()\\n'
                   )
               vm.write_text(v, encoding="utf-8")
+          vm = vm_candidates[0]
 
           # Correct the user-visible app title in all localized resource files.
           for strings in (app / "src").glob("*/res/values*/strings.xml"):
