@@ -21,6 +21,9 @@ name: Build Android APK
 #  11. On failure, run automated diagnosis
 
 on:
+  push:
+    paths:
+      - ".github/workflows/build-android.yml"
   workflow_dispatch:
     inputs:
       zip_source:
@@ -158,6 +161,106 @@ jobs:
           import sys
           root = Path(sys.argv[1])
           app = root / "app"
+
+          # Patch the actual calculator keypad, not only the app branding.
+          keypad = app / "src/main/java/com/calculator/feature/basic/ui/CalculatorKeypad.kt"
+          if keypad.exists():
+              k = keypad.read_text(encoding="utf-8")
+              k = k.replace(
+                  'KeypadRowSpec(listOf(Key.Clear, Key.SignFlip, Key.Symbol("%"), Key.Symbol("÷")), compact = true),',
+                  'KeypadRowSpec(listOf(Key.Clear, Key.Backspace, Key.SignFlip, Key.Symbol("%"), Key.Symbol("÷")), compact = true),'
+              )
+              old_bottom = '''            // Bottom iOS-style row: the zero key occupies two columns.
+              Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  horizontalArrangement = Arrangement.spacedBy(8.dp),
+              ) {
+                  KeyButton(
+                      key = Key.Symbol("0"),
+                      onEvent = onEvent,
+                      modifier = Modifier.weight(2f).keySize(BUTTON_ASPECT_RATIO, minKeyHeight),
+                  )
+                  KeyButton(
+                      key = Key.Symbol("."),
+                      onEvent = onEvent,
+                      modifier = Modifier.weight(1f).keySize(BUTTON_ASPECT_RATIO, minKeyHeight),
+                  )
+                  KeyButton(
+                      key = Key.Equals,
+                      onEvent = onEvent,
+                      modifier = Modifier.weight(1f).keySize(BUTTON_ASPECT_RATIO, minKeyHeight),
+                  )
+              }'''
+              new_bottom = '''            // Five equal-width keys: history trash, double-zero, zero, decimal, equals.
+              // The 0 key is now the same width as the other keys.
+              Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  horizontalArrangement = Arrangement.spacedBy(8.dp),
+              ) {
+                  KeyButton(
+                      key = Key.Function("clearall", "🗑"),
+                      onEvent = onEvent,
+                      compact = true,
+                      modifier = Modifier.weight(1f).keySize(BUTTON_ASPECT_RATIO_COMPACT, minKeyHeight),
+                  )
+                  KeyButton(
+                      key = Key.Symbol("00"),
+                      onEvent = onEvent,
+                      compact = true,
+                      modifier = Modifier.weight(1f).keySize(BUTTON_ASPECT_RATIO_COMPACT, minKeyHeight),
+                  )
+                  KeyButton(
+                      key = Key.Symbol("0"),
+                      onEvent = onEvent,
+                      modifier = Modifier.weight(1f).keySize(BUTTON_ASPECT_RATIO, minKeyHeight),
+                  )
+                  KeyButton(
+                      key = Key.Symbol("."),
+                      onEvent = onEvent,
+                      modifier = Modifier.weight(1f).keySize(BUTTON_ASPECT_RATIO, minKeyHeight),
+                  )
+                  KeyButton(
+                      key = Key.Equals,
+                      onEvent = onEvent,
+                      modifier = Modifier.weight(1f).keySize(BUTTON_ASPECT_RATIO, minKeyHeight),
+                  )
+              }'''
+              if old_bottom not in k:
+                  raise SystemExit("Could not safely find original keypad bottom row; refusing to build without key changes.")
+              k = k.replace(old_bottom, new_bottom, 1)
+              k = k.replace(
+                  'is Key.Function -> onEvent(BasicCalculatorEvent.Append("${key.keyword}("))',
+                  'is Key.Function -> if (key.keyword == "clearall") onEvent(BasicCalculatorEvent.ClearTape) else onEvent(BasicCalculatorEvent.Append("${key.keyword}("))'
+              )
+              keypad.write_text(k, encoding="utf-8")
+
+          # Add a tape-only clear event so the trash key does not erase the current expression.
+          ui_state = app / "src/main/java/com/calculator/feature/basic/ui/BasicCalculatorUiState.kt"
+          if ui_state.exists():
+              u = ui_state.read_text(encoding="utf-8")
+              if "data object ClearTape" not in u:
+                  u = u.replace(
+                      '    data object ClearAll : BasicCalculatorEvent\n',
+                      '    data object ClearAll : BasicCalculatorEvent\n\n    /** Clear only the visible calculation tape, preserving the current expression. */\n    data object ClearTape : BasicCalculatorEvent\n'
+                  )
+              ui_state.write_text(u, encoding="utf-8")
+          vm = app / "src/main/java/com/calculator/feature/basic/ui/BasicCalculatorViewModel.kt"
+          if vm.exists():
+              v = vm.read_text(encoding="utf-8")
+              if "BasicCalculatorEvent.ClearTape -> tapeStore.clear()" not in v:
+                  v = v.replace(
+                      '                BasicCalculatorEvent.Clear -> clear()\n',
+                      '                BasicCalculatorEvent.Clear -> clear()\n                BasicCalculatorEvent.ClearTape -> tapeStore.clear()\n'
+                  )
+              vm.write_text(v, encoding="utf-8")
+
+          # Correct the user-visible app title in all localized resource files.
+          for strings in (app / "src").glob("*/res/values*/strings.xml"):
+              s = strings.read_text(encoding="utf-8")
+              import re
+              s = re.sub(r'(<string name="app_name"[^>]*>).*?(</string>)', r'\1格拉瑞计算器\2', s)
+              s = re.sub(r'(<string name="app_name_short"[^>]*>).*?(</string>)', r'\1格拉瑞计算器\2', s)
+              strings.write_text(s, encoding="utf-8")
           settings = app / "src/main/java/com/calculator/feature/settings/SettingsSheet.kt"
           if settings.exists():
               s = settings.read_text(encoding="utf-8")
