@@ -171,7 +171,7 @@ jobs:
                   'KeypadRowSpec(listOf(Key.Clear, Key.Backspace, Key.SignFlip, Key.Symbol("%"), Key.Symbol("÷")), compact = true),'
               )
               import textwrap, re
-              new_bottom = "\\n".join("            " + line for line in textwrap.dedent("""
+              new_bottom = "\n".join("            " + line for line in textwrap.dedent("""
                   // Five equal-width keys: history trash, double-zero, zero, decimal, equals.
                   // The 0 key is now the same width as the other keys.
                   Row(
@@ -206,8 +206,8 @@ jobs:
                           modifier = Modifier.weight(1f).keySize(BUTTON_ASPECT_RATIO, minKeyHeight),
                       )
                   }
-              """).strip("\\n").splitlines())
-              k, bottom_count = re.subn(r"(?ms)^ {12}// Bottom iOS-style row:.*?^ {12}\\}", lambda _: new_bottom, k, count=1)
+              """).strip("\n").splitlines())
+              k, bottom_count = re.subn(r"(?ms)^ {12}// Bottom iOS-style row:.*?^ {12}\}", lambda _: new_bottom, k, count=1)
               if bottom_count != 1:
                   raise SystemExit("Could not safely replace calculator bottom row; refusing to build without all requested keys.")
               k = k.replace(
