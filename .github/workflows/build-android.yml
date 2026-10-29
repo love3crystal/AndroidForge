@@ -158,7 +158,7 @@ jobs:
           ROOT="${{ steps.extract.outputs.project_root }}"
           python3 - "$ROOT" <<'PY'
           from pathlib import Path
-          import sys
+          import os, sys
           root = Path(sys.argv[1])
           app = root / "app"
 
@@ -269,7 +269,12 @@ jobs:
               s = gradle.read_text(encoding="utf-8")
               if "isMinifyEnabled = true" not in s:
                   s = s.replace("release {", "release {" + chr(10) + "            isMinifyEnabled = true" + chr(10) + "            isShrinkResources = true", 1)
-                  gradle.write_text(s, encoding="utf-8")
+              # Give every build a monotonically increasing versionCode.
+              build_code = 10000 + int(os.environ.get("GITHUB_RUN_NUMBER", "1"))
+              s, code_count = re.subn(r'(?m)^(\s*versionCode\s*=\s*)\d+\b', lambda m: m.group(1) + str(build_code), s)
+              if code_count != 1:
+                  raise SystemExit(f"Expected exactly one literal versionCode in app/build.gradle.kts, found {code_count}; refusing to publish.")
+              gradle.write_text(s, encoding="utf-8")
           bg = app / "src/main/res/drawable/ic_launcher_background.xml"
           if bg.exists():
               bg.write_text('''<?xml version="1.0" encoding="utf-8"?>
@@ -294,6 +299,8 @@ jobs:
           # Stop the release if the requested changes were not actually applied.
           checks = {
               "backspace": "Key.Backspace" in keypad.read_text(encoding="utf-8"),
+              "bottom row replaced": "Five equal-width keys: history trash, double-zero, zero, decimal, equals." in keypad.read_text(encoding="utf-8"),
+              "five bottom-row buttons": ("Five equal-width keys: history trash, double-zero, zero, decimal, equals." in keypad.read_text(encoding="utf-8")) and keypad.read_text(encoding="utf-8").split("Five equal-width keys: history trash, double-zero, zero, decimal, equals.", 1)[1].split("Bottom iOS-style row:", 1)[0].count("KeyButton(") >= 5,
               "trash key": 'Key.Function("clearall", "🗑")' in keypad.read_text(encoding="utf-8"),
               "double zero": 'Key.Symbol("00")' in keypad.read_text(encoding="utf-8") and 'key.label == "00"' in keypad.read_text(encoding="utf-8"),
               "clear tape only": "BasicCalculatorEvent.ClearTape" in keypad.read_text(encoding="utf-8") and "data object ClearTape" in ui_state.read_text(encoding="utf-8") and "BasicCalculatorEvent.ClearTape -> tapeStore.clear()" in vm.read_text(encoding="utf-8"),
@@ -596,6 +603,17 @@ jobs:
             echo "ERROR: No APK files found in output directory."
             exit 1
           fi
+
+          # Never publish the exact known-bad APK again.
+          OLD_APK_SHA256="31a0afd581a2e4e3799f7c6f0d97dcd621143aebef7216f75451f0b43a93d940"
+          while IFS= read -r -d '' apk; do
+            sha="$(sha256sum "$apk" | awk '{print $1}')"
+            echo "Verified candidate APK: $(basename "$apk") sha256=$sha"
+            if [ "$sha" = "$OLD_APK_SHA256" ]; then
+              echo "::error::Refusing to publish the known unchanged APK."
+              exit 1
+            fi
+          done < <(find "$GITHUB_WORKSPACE/output" -type f -name '*.apk' -print0)
 
           rm -f "$KEYSTORE"
       # ---------------------------------------------------------------------
