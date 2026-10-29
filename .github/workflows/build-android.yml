@@ -266,7 +266,7 @@ jobs:
               if "BasicCalculatorEvent.ClearTape -> tapeStore.clear()" not in v:
                   v = v.replace(
                       '                BasicCalculatorEvent.Clear -> clear()\n',
-                      '                BasicCalculatorEvent.Clear -> clear()\\n                BasicCalculatorEvent.ClearTape -> tapeStore.clear()\n'
+                      '                BasicCalculatorEvent.Clear -> clear()\n                BasicCalculatorEvent.ClearTape -> tapeStore.clear()\n'
                   )
               vm.write_text(v, encoding="utf-8")
           vm = vm_candidates[0]
