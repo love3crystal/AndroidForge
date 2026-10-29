@@ -193,17 +193,20 @@ jobs:
                       KeyButton(
                           key = Key.Symbol("0"),
                           onEvent = onEvent,
-                          modifier = Modifier.weight(1f).keySize(BUTTON_ASPECT_RATIO, minKeyHeight),
+                          compact = true,
+                          modifier = Modifier.weight(1f).keySize(BUTTON_ASPECT_RATIO_COMPACT, minKeyHeight),
                       )
                       KeyButton(
                           key = Key.Symbol("."),
                           onEvent = onEvent,
-                          modifier = Modifier.weight(1f).keySize(BUTTON_ASPECT_RATIO, minKeyHeight),
+                          compact = true,
+                          modifier = Modifier.weight(1f).keySize(BUTTON_ASPECT_RATIO_COMPACT, minKeyHeight),
                       )
                       KeyButton(
                           key = Key.Equals,
                           onEvent = onEvent,
-                          modifier = Modifier.weight(1f).keySize(BUTTON_ASPECT_RATIO, minKeyHeight),
+                          compact = true,
+                          modifier = Modifier.weight(1f).keySize(BUTTON_ASPECT_RATIO_COMPACT, minKeyHeight),
                       )
                   }
               """).strip("\n").splitlines())
