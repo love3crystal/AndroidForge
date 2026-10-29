@@ -182,7 +182,7 @@ jobs:
                   'KeypadRowSpec(listOf(Key.Clear, Key.SignFlip, Key.Symbol("%"), Key.Symbol("÷")), compact = true),',
                   'KeypadRowSpec(listOf(Key.Clear, Key.Backspace, Key.SignFlip, Key.Symbol("%"), Key.Symbol("÷")), compact = true)'
               )
-              new_bottom = "\\n".join("            " + line for line in textwrap.dedent("""
+              new_bottom = "\n".join("            " + line for line in textwrap.dedent("""
                   // Five equal-width keys: history trash, double-zero, zero, decimal, equals.
                   Row(
                       modifier = Modifier.fillMaxWidth(),
@@ -219,8 +219,8 @@ jobs:
                           modifier = Modifier.weight(1f).keySize(BUTTON_ASPECT_RATIO_COMPACT, minKeyHeight),
                       )
                   }
-              """).strip("\\n").splitlines())
-              k, bottom_count = re.subn(r"(?ms)^ {12}// Bottom iOS-style row:.*?^ {12}\\}", lambda _: new_bottom, k, count=1)
+              """).strip("\n").splitlines())
+              k, bottom_count = re.subn(r"(?ms)^ {12}// Bottom iOS-style row:.*?^ {12}\}", lambda _: new_bottom, k, count=1)
               if bottom_count != 1:
                   if "Five equal-width keys: history trash, double-zero, zero, decimal, equals." not in k:
                       raise SystemExit(f"{keypad}: could not replace bottom row; refusing to build.")
@@ -230,8 +230,8 @@ jobs:
                   k = k.replace(old_symbol, new_symbol, 1)
               elif new_symbol not in k:
                   raise SystemExit(f"{keypad}: symbol dispatch pattern not found; refusing to build.")
-              old_function = 'is Key.Function -> onEvent(BasicCalculatorEvent.Append("\\${key.keyword}("))'
-              new_function = 'is Key.Function -> if (key.keyword == "clearall") onEvent(BasicCalculatorEvent.ClearTape) else onEvent(BasicCalculatorEvent.Append("\\${key.keyword}("))'
+              old_function = 'is Key.Function -> onEvent(BasicCalculatorEvent.Append("${key.keyword}("))'
+              new_function = 'is Key.Function -> if (key.keyword == "clearall") onEvent(BasicCalculatorEvent.ClearTape) else onEvent(BasicCalculatorEvent.Append("${key.keyword}("))'
               if old_function in k:
                   k = k.replace(old_function, new_function, 1)
               elif new_function not in k:
@@ -256,7 +256,7 @@ jobs:
               if "data object ClearTape" not in u:
                   u = u.replace(
                       '    data object ClearAll : BasicCalculatorEvent\\n',
-                      '    data object ClearAll : BasicCalculatorEvent\\n\\n    /** Clear only the visible calculation tape, preserving the current expression. */\\n    data object ClearTape : BasicCalculatorEvent\\n'
+                      '    data object ClearAll : BasicCalculatorEvent\n\n    /** Clear only the visible calculation tape, preserving the current expression. */\n    data object ClearTape : BasicCalculatorEvent\n'
                   )
               ui_state.write_text(u, encoding="utf-8")
           ui_state = state_candidates[0]
@@ -265,8 +265,8 @@ jobs:
               v = vm.read_text(encoding="utf-8")
               if "BasicCalculatorEvent.ClearTape -> tapeStore.clear()" not in v:
                   v = v.replace(
-                      '                BasicCalculatorEvent.Clear -> clear()\\n',
-                      '                BasicCalculatorEvent.Clear -> clear()\\n                BasicCalculatorEvent.ClearTape -> tapeStore.clear()\\n'
+                      '                BasicCalculatorEvent.Clear -> clear()\n',
+                      '                BasicCalculatorEvent.Clear -> clear()\\n                BasicCalculatorEvent.ClearTape -> tapeStore.clear()\n'
                   )
               vm.write_text(v, encoding="utf-8")
           vm = vm_candidates[0]
