@@ -255,7 +255,7 @@ jobs:
               u = ui_state.read_text(encoding="utf-8")
               if "data object ClearTape" not in u:
                   u = u.replace(
-                      '    data object ClearAll : BasicCalculatorEvent\\n',
+                      '    data object ClearAll : BasicCalculatorEvent\n',
                       '    data object ClearAll : BasicCalculatorEvent\n\n    /** Clear only the visible calculation tape, preserving the current expression. */\n    data object ClearTape : BasicCalculatorEvent\n'
                   )
               ui_state.write_text(u, encoding="utf-8")
