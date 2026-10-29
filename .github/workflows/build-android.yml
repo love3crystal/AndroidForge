@@ -290,6 +290,7 @@ jobs:
           </vector>
           ''', encoding="utf-8")
           print("GLR branding applied to", root)
+          print("GLR post-patch verification enabled in workflow")
           PY
 
       # ---------------------------------------------------------------------
