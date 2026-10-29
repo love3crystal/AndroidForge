@@ -21,6 +21,9 @@ name: Build Android APK
 #  11. On failure, run automated diagnosis
 
 on:
+  push:
+    paths:
+      - ".github/workflows/build-android.yml"
   workflow_dispatch:
     inputs:
       zip_source:
@@ -147,6 +150,49 @@ jobs:
       - name: Extract source ZIP
         id: extract
         run: python3 scripts/extract_zip.py --zip "${{ steps.acquire.outputs.zip_path }}"
+
+      - name: Apply GLR branding to calculator project
+        if: steps.detect.outputs.project_type == 'gradle'
+        shell: bash
+        run: |
+          ROOT="${{ steps.extract.outputs.project_root }}"
+          python3 - "$ROOT" <<'PY'
+          from pathlib import Path
+          import sys
+          root = Path(sys.argv[1])
+          app = root / "app"
+          settings = app / "src/main/java/com/calculator/feature/settings/SettingsSheet.kt"
+          if settings.exists():
+              s = settings.read_text(encoding="utf-8")
+              s = s.replace('value = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",', 'value = "GLR ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",')
+              s = s.replace('value = stringResource(R.string.settings_about_license_value),', 'value = "GLR Open Source License",')
+              s = s.replace('onClick = { uriHandler.openUri("https://github.com/$githubHandle") },', 'onClick = { uriHandler.openUri("https://github.com/love3crystal/AndroidForge") },')
+              settings.write_text(s, encoding="utf-8")
+          strings = app / "src/main/res/values/strings.xml"
+          if strings.exists():
+              s = strings.read_text(encoding="utf-8")
+              s = s.replace('<string name="settings_about_github_value">professional-x</string>', '<string name="settings_about_github_value">love3crystal/AndroidForge</string>')
+              s = s.replace('<string name="settings_about_license_value">Apache License 2.0</string>', '<string name="settings_about_license_value">GLR · Apache License 2.0</string>')
+              strings.write_text(s, encoding="utf-8")
+          bg = app / "src/main/res/drawable/ic_launcher_background.xml"
+          if bg.exists():
+              bg.write_text('''<?xml version="1.0" encoding="utf-8"?>
+          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+              <path android:fillColor="#1769E0" android:pathData="M0,0h108v108h-108z"/>
+              <path android:fillColor="#1254B8" android:pathData="M0,78L108,18v90h-108z"/>
+          </vector>
+          ''', encoding="utf-8")
+          fg = app / "src/main/res/drawable/ic_launcher_foreground.xml"
+          if fg.exists():
+              fg.write_text('''<?xml version="1.0" encoding="utf-8"?>
+          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+              <path android:fillColor="#FFFFFFFF" android:pathData="M54,18C34,18 20,33 20,54S34,90 54,90c11,0 20,-4 27,-12V49H54v12h14v10c-4,4 -9,6 -14,6 -13,0 -21,-9 -21,-23s8,-24 21,-24c8,0 14,4 18,10l10,-7C76,24 66,18 54,18z"/>
+              <path android:fillColor="#FFFFFFFF" android:pathData="M76,49h10v40H76z"/>
+              <path android:fillColor="#FFFFFFFF" android:pathData="M82,49h10c10,0 15,6 15,15 0,7 -3,11 -9,14l11,11H95L85,78H82z M89,59v10h3c3,0 5,-2 5,-5s-2,-5 -5,-5z"/>
+          </vector>
+          ''', encoding="utf-8")
+          print("GLR branding applied to", root)
+          PY
 
       # ---------------------------------------------------------------------
       # Step 3: Detect project (writes detection.json)
