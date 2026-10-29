@@ -658,8 +658,8 @@ jobs:
                   dex = bytearray(z.read("classes.dex"))
               if len(dex) < 32:
                   raise SystemExit(f"{apk.name}: classes.dex is unexpectedly short.")
-              dex[8:32] = b"\\0" * 24
-              normalized, count = re.subn(rb"\\d+\\.\\d+\\.\\d+ \\(\\d{5}\\)", b"0.0.0 (00000)", bytes(dex))
+              dex[8:32] = b"\0" * 24
+              normalized, count = re.subn(rb"\d+\.\d+\.\d+ \(\d{5}\)", b"0.0.0 (00000)", bytes(dex))
               if count != 1:
                   raise SystemExit(f"{apk.name}: expected one version label in DEX, found {count}.")
               digest = hashlib.sha256(normalized).hexdigest()
