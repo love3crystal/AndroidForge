@@ -247,7 +247,7 @@ jobs:
           import re
           if settings.exists():
               s = settings.read_text(encoding="utf-8")
-              s = re.sub(r'value = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",', r'value = "GLR ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",', s)
+              s = re.sub(r'value = "\\$\\{BuildConfig\\.VERSION_NAME\\} \\(\\$\\{BuildConfig\\.VERSION_CODE\\}\\)",', r'value = "GLR ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",', s)
               s = re.sub(r'value = stringResource\(R.string.settings_about_license_value\),', 'value = "GLR · Apache 2.0",', s)
               s = re.sub(r'onClick = \{ uriHandler.openUri\("https://github.com/[^"]+"\) \},', 'onClick = { uriHandler.openUri("https://github.com/love3crystal/AndroidForge") },', s)
               settings.write_text(s, encoding="utf-8")
