@@ -643,6 +643,31 @@ jobs:
             fi
           done < <(find "$GITHUB_WORKSPACE/output" -type f -name '*.apk' -print0)
 
+          # Verify the compiled DEX changed, not just the app version string.
+          # Baseline is the previously delivered bad APK, normalized for DEX header checksum/signature
+          # and the version label. A matching normalized hash means the UI code is still unchanged.
+          python3 - "$GITHUB_WORKSPACE/output" <<'PY'
+          import hashlib, pathlib, re, sys, zipfile
+          output = pathlib.Path(sys.argv[1])
+          baseline = "135f99986846a337b15ef8eda98f52f8c3aaf67b71714e378f51b57e58ed0e31"
+          apks = list(output.glob("*.apk"))
+          if not apks:
+              raise SystemExit("No APK found for compiled-code verification.")
+          for apk in apks:
+              with zipfile.ZipFile(apk) as z:
+                  dex = bytearray(z.read("classes.dex"))
+              if len(dex) < 32:
+                  raise SystemExit(f"{apk.name}: classes.dex is unexpectedly short.")
+              dex[8:32] = b"\\0" * 24
+              normalized, count = re.subn(rb"\\d+\\.\\d+\\.\\d+ \\(\\d{5}\\)", b"0.0.0 (00000)", bytes(dex))
+              if count != 1:
+                  raise SystemExit(f"{apk.name}: expected one version label in DEX, found {count}.")
+              digest = hashlib.sha256(normalized).hexdigest()
+              print(f"Compiled DEX normalized SHA-256: {apk.name} {digest}")
+              if digest == baseline:
+                  raise SystemExit(f"{apk.name}: compiled code is unchanged apart from version metadata; refusing to publish.")
+          PY
+
           rm -f "$KEYSTORE"
       # ---------------------------------------------------------------------
       # Step 13: Upload APK artifact
