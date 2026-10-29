@@ -21,9 +21,6 @@ name: Build Android APK
 #  11. On failure, run automated diagnosis
 
 on:
-  push:
-    paths:
-      - ".github/workflows/build-android.yml"
   workflow_dispatch:
     inputs:
       zip_source:
