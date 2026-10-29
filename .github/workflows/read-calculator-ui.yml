@@ -1,0 +1,28 @@
+name: Read Calculator UI Source
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  read-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print relevant calculator UI source
+        shell: bash
+        run: |
+          set -e
+          unzip -p input/ycqjsq.zip android-calculator-main/app/src/main/java/com/calculator/feature/basic/ui/BasicCalculatorScreen.kt
+          echo
+          echo "===== CALCULATOR KEYPAD ====="
+          unzip -p input/ycqjsq.zip android-calculator-main/app/src/main/java/com/calculator/feature/basic/ui/CalculatorKeypad.kt
+          echo
+          echo "===== VIEW MODEL ====="
+          unzip -p input/ycqjsq.zip android-calculator-main/app/src/main/java/com/calculator/feature/basic/ui/BasicCalculatorViewModel.kt
+          echo
+          echo "===== UI STATE ====="
+          unzip -p input/ycqjsq.zip android-calculator-main/app/src/main/java/com/calculator/feature/basic/ui/BasicCalculatorUiState.kt
