@@ -1,0 +1,39 @@
+name: GLR Calculator Source Inspection
+
+on:
+  push:
+    paths:
+      - ".github/workflows/glr-source-inspect.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print calculator source and app configuration
+        shell: bash
+        run: |
+          set -e
+          ZIP=input/ycqjsq.zip
+          echo "===== SOURCE ZIP ====="
+          ls -lh "$ZIP"
+          echo "===== MANIFEST / RESOURCES / BUILD FILES ====="
+          unzip -Z1 "$ZIP" | grep -Ei '(^|/)(AndroidManifest.xml|build.gradle|build.gradle.kts|gradle.properties|strings.xml|themes.xml|History.*\.kt|.*History.*\.kt|.*Tape.*\.kt|.*Calculator.*\.kt|.*\.xml)$' | head -n 250
+          for f in \
+            android-calculator-main/app/src/main/java/com/calculator/feature/basic/ui/BasicCalculatorScreen.kt \
+            android-calculator-main/app/src/main/java/com/calculator/feature/basic/ui/CalculatorKeypad.kt \
+            android-calculator-main/app/src/main/java/com/calculator/feature/basic/ui/BasicCalculatorViewModel.kt \
+            android-calculator-main/app/src/main/java/com/calculator/feature/basic/ui/BasicCalculatorUiState.kt; do
+            echo "===== FILE: $f ====="
+            unzip -p "$ZIP" "$f" || true
+            echo
+          done
+          echo "===== APP SETTINGS AND HISTORY REFERENCES ====="
+          unzip -Z1 "$ZIP" | grep -E '\.(kt|xml|kts)$' | while IFS= read -r f; do
+            unzip -p "$ZIP" "$f" 2>/dev/null | grep -Ein 'license|licence|versionName|app_name|history|History|tape|Tape|Icon|applicationId|release' | head -n 12 | sed "s#^#$f:#" || true
+          done | head -n 250 || true
