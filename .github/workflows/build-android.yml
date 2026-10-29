@@ -165,14 +165,14 @@ jobs:
           if settings.exists():
               s = settings.read_text(encoding="utf-8")
               s = s.replace('value = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",', 'value = "GLR ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",')
-              s = s.replace('value = stringResource(R.string.settings_about_license_value),', 'value = "GLR Open Source License",')
+              s = s.replace('value = stringResource(R.string.settings_about_license_value),', 'value = "GLR · Apache 2.0",')
               s = s.replace('onClick = { uriHandler.openUri("https://github.com/$githubHandle") },', 'onClick = { uriHandler.openUri("https://github.com/love3crystal/AndroidForge") },')
               settings.write_text(s, encoding="utf-8")
           strings = app / "src/main/res/values/strings.xml"
           if strings.exists():
               s = strings.read_text(encoding="utf-8")
-              s = s.replace('<string name="settings_about_github_value">professional-x</string>', '<string name="settings_about_github_value">love3crystal/AndroidForge</string>')
-              s = s.replace('<string name="settings_about_license_value">Apache License 2.0</string>', '<string name="settings_about_license_value">GLR · Apache License 2.0</string>')
+              s = s.replace('<string name="settings_about_github_value" translatable="false">zeevy/android-calculator</string>', '<string name="settings_about_github_value" translatable="false">love3crystal/AndroidForge</string>')
+              s = s.replace('<string name="settings_about_license_value" translatable="false">Apache 2.0</string>', '<string name="settings_about_license_value" translatable="false">GLR · Apache 2.0</string>')
               strings.write_text(s, encoding="utf-8")
           bg = app / "src/main/res/drawable/ic_launcher_background.xml"
           if bg.exists():
