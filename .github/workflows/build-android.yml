@@ -510,8 +510,16 @@ jobs:
         id: build
         continue-on-error: true
         run: |
+          ROOT="${{ steps.extract.outputs.project_root }}"
+          echo "=== Remove pre-existing build outputs to prevent publishing a stale APK ==="
+          # The uploaded source ZIP can contain old app/build outputs. Remove all
+          # generated Gradle build directories so only this run's patched source
+          # can produce the APK that is collected and published.
+          find "$ROOT" -type d -name build -prune -exec rm -rf {} +
+          rm -rf "$GITHUB_WORKSPACE/output"
+          mkdir -p "$GITHUB_WORKSPACE/output"
           python3 "$GITHUB_WORKSPACE/scripts/build_project.py" \
-            --root "${{ steps.extract.outputs.project_root }}" \
+            --root "$ROOT" \
             --detect "$GITHUB_WORKSPACE/detection.json" \
             --toolchain "$GITHUB_WORKSPACE/toolchain.json" \
             --variant "${{ inputs.build_variant || 'release' }}" \
