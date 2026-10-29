@@ -214,6 +214,10 @@ jobs:
               if bottom_count != 1:
                   raise SystemExit("Could not safely replace calculator bottom row; refusing to build without all requested keys.")
               k = k.replace(
+                  'is Key.Symbol -> onEvent(BasicCalculatorEvent.Append(key.label))',
+                  'is Key.Symbol -> if (key.label == "00") { onEvent(BasicCalculatorEvent.Append("0")); onEvent(BasicCalculatorEvent.Append("0")) } else onEvent(BasicCalculatorEvent.Append(key.label))'
+              )
+              k = k.replace(
                   'is Key.Function -> onEvent(BasicCalculatorEvent.Append("${key.keyword}("))',
                   'is Key.Function -> if (key.keyword == "clearall") onEvent(BasicCalculatorEvent.ClearTape) else onEvent(BasicCalculatorEvent.Append("${key.keyword}("))'
               )
