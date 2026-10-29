@@ -33,6 +33,12 @@ jobs:
             unzip -p "$ZIP" "$f" || true
             echo
           done
+          echo "===== SETTINGS SHEET ====="
+          unzip -p "$ZIP" android-calculator-main/app/src/main/java/com/calculator/feature/settings/SettingsSheet.kt || true
+          echo "===== APP GRADLE ====="
+          unzip -p "$ZIP" android-calculator-main/app/build.gradle.kts || true
+          echo "===== STRINGS ====="
+          unzip -p "$ZIP" android-calculator-main/app/src/main/res/values/strings.xml || true
           echo "===== APP SETTINGS AND HISTORY REFERENCES ====="
           unzip -Z1 "$ZIP" | grep -E '\.(kt|xml|kts)$' | while IFS= read -r f; do
             unzip -p "$ZIP" "$f" 2>/dev/null | grep -Ein 'license|licence|versionName|app_name|history|History|tape|Tape|Icon|applicationId|release' | head -n 12 | sed "s#^#$f:#" || true
