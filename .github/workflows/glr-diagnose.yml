@@ -1,0 +1,45 @@
+name: GLR Diagnose Source
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/glr-diagnose.yml"
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  ANDROID_HOME: /opt/android-sdk
+  ANDROID_SDK_ROOT: /opt/android-sdk
+  JAVA_HOME: /usr/lib/jvm/java-21-openjdk-amd64
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    container: ghcr.io/love3crystal/androidforge-build-env:latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Acquire and extract source
+        run: |
+          python3 scripts/acquire_zip.py --source input-directory --url "" --tag "" --path input/ycqjsq.zip
+          python3 scripts/extract_zip.py --zip input/ycqjsq.zip
+          echo "ROOT=$?"
+      - name: Print real calculator source structure
+        shell: bash
+        run: |
+          ROOT=$(find .androidforge/workspace -mindepth 2 -maxdepth 3 -type d -name android-calculator-main | head -1)
+          echo "PROJECT_ROOT=$ROOT"
+          test -n "$ROOT"
+          echo "=== CalculatorKeypad candidates ==="
+          find "$ROOT" -type f -name 'CalculatorKeypad.kt' -print
+          FILE=$(find "$ROOT" -type f -name 'CalculatorKeypad.kt' | head -1)
+          test -n "$FILE"
+          echo "=== CalculatorKeypad.kt ==="
+          nl -ba "$FILE"
+          echo "=== UI state ==="
+          find "$ROOT" -type f -name 'BasicCalculatorUiState.kt' -print -exec nl -ba {} \;
+          echo "=== ViewModel ==="
+          find "$ROOT" -type f -name 'BasicCalculatorViewModel.kt' -print -exec nl -ba {} \;
