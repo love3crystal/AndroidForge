@@ -180,7 +180,7 @@ jobs:
               k = keypad.read_text(encoding="utf-8")
               k = k.replace(
                   'KeypadRowSpec(listOf(Key.Clear, Key.SignFlip, Key.Symbol("%"), Key.Symbol("÷")), compact = true),',
-                  'KeypadRowSpec(listOf(Key.Clear, Key.Backspace, Key.SignFlip, Key.Symbol("%"), Key.Symbol("÷")), compact = true)'
+                  'KeypadRowSpec(listOf(Key.Clear, Key.Backspace, Key.SignFlip, Key.Symbol("%"), Key.Symbol("÷")), compact = true),'
               )
               new_bottom = "\n".join("            " + line for line in textwrap.dedent("""
                   // Five equal-width keys: history trash, double-zero, zero, decimal, equals.
