@@ -220,10 +220,34 @@ jobs:
                       )
                   }
               """).strip("\n").splitlines())
-              k, bottom_count = re.subn(r"(?ms)^ {12}// Bottom iOS-style row:.*?^ {12}\}", lambda _: new_bottom, k, count=1)
-              if bottom_count != 1:
-                  if "Five equal-width keys: history trash, double-zero, zero, decimal, equals." not in k:
-                      raise SystemExit(f"{keypad}: could not replace bottom row; refusing to build.")
+              # Replace the existing bottom Row by locating its balanced braces.
+              # This avoids brittle indentation-sensitive regex matching.
+              marker = "// Bottom iOS-style row:"
+              start = k.find(marker)
+              if start >= 0:
+                  row_start = k.find("Row(", start)
+                  body_start = k.find("{", row_start)
+                  if row_start < 0 or body_start < 0:
+                      raise SystemExit(f"{keypad}: could not locate bottom Row body.")
+                  depth = 0
+                  end = -1
+                  for pos in range(body_start, len(k)):
+                      if k[pos] == "{":
+                          depth += 1
+                      elif k[pos] == "}":
+                          depth -= 1
+                          if depth == 0:
+                              end = pos + 1
+                              break
+                  if end < 0:
+                      raise SystemExit(f"{keypad}: bottom Row braces are unbalanced.")
+                  line_start = k.rfind("\n", 0, start) + 1
+                  line_end = k.find("\n", end)
+                  if line_end < 0:
+                      line_end = len(k)
+                  k = k[:line_start] + new_bottom + k[line_end:]
+              elif "Five equal-width keys: history trash, double-zero, zero, decimal, equals." not in k:
+                  raise SystemExit(f"{keypad}: bottom row marker missing; refusing to build.")
               old_symbol = 'is Key.Symbol -> onEvent(BasicCalculatorEvent.Append(key.label))'
               new_symbol = 'is Key.Symbol -> if (key.label == "00") { onEvent(BasicCalculatorEvent.Append("0")); onEvent(BasicCalculatorEvent.Append("0")) } else onEvent(BasicCalculatorEvent.Append(key.label))'
               if old_symbol in k:
