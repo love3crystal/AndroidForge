@@ -26,13 +26,12 @@ jobs:
         run: |
           python3 scripts/acquire_zip.py --source input-directory --url "" --tag "" --path input/ycqjsq.zip
           python3 scripts/extract_zip.py --zip input/ycqjsq.zip
-          echo "ROOT=$?"
       - name: Print real calculator source structure
         shell: bash
         run: |
-          ROOT=$(find .androidforge/workspace -mindepth 2 -maxdepth 3 -type d -name android-calculator-main | head -1)
+          ROOT=".androidforge/workspace/android-calculator-main"
           echo "PROJECT_ROOT=$ROOT"
-          test -n "$ROOT"
+          test -d "$ROOT"
           echo "=== CalculatorKeypad candidates ==="
           find "$ROOT" -type f -name 'CalculatorKeypad.kt' -print
           FILE=$(find "$ROOT" -type f -name 'CalculatorKeypad.kt' | head -1)
