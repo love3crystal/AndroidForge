@@ -335,16 +335,20 @@ jobs:
               <path android:fillColor="#1254B8" android:pathData="M0,78L108,18v90h-108z"/>
           </vector>
           ''', encoding="utf-8")
+          # Use the user's complete original square logo image, uniformly scaled to 108x108.
+          # The source image is committed in input/glr_icon.jpg; no crop or logo-only zoom.
+          icon_source = Path(os.environ["GITHUB_WORKSPACE"]) / "input/glr_icon.jpg"
+          icon_target = app / "src/main/res/drawable-nodpi/glr_icon.jpg"
+          if not icon_source.exists():
+              raise SystemExit("Original GLR icon image is missing from repository input/.")
+          icon_target.parent.mkdir(parents=True, exist_ok=True)
+          import shutil
+          shutil.copyfile(icon_source, icon_target)
           fg = app / "src/main/res/drawable/ic_launcher_foreground.xml"
-          if fg.exists():
-              fg.write_text('''<?xml version="1.0" encoding="utf-8"?>
-          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-              <!-- Bold, separated GLR block letters with safe margins for adaptive-icon masking. -->
-              <path android:fillColor="#FFFFFFFF" android:pathData="M18,30h7v40h-7z M18,30h20v7H18z M18,63h20v7H18z M31,48h7v22h-7z M27,48h11v7H27z"/>
-              <path android:fillColor="#FFFFFFFF" android:pathData="M42,30h7v33h11v7H42z"/>
-              <path android:fillColor="#FFFFFFFF" android:pathData="M64,30h7v40h-7z M64,30h26v7H64z M83,30h7v23h-7z M64,46h26v7H64z M70,50h8l11,20h-8z"/>
-              <path android:fillColor="#1769E0" android:pathData="M72,37h11v9H72z"/>
-          </vector>
+          fg.write_text('''<?xml version="1.0" encoding="utf-8"?>
+          <bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+              android:src="@drawable/glr_icon"
+              android:gravity="center" />
           ''', encoding="utf-8")
           print("GLR branding applied to", root)
           print("GLR post-patch verification enabled in workflow")
@@ -360,7 +364,7 @@ jobs:
               "version prefix": 'value = "GLR ' in settings.read_text(encoding="utf-8") and "BuildConfig.VERSION_NAME" in settings.read_text(encoding="utf-8"),
               "license prefix": 'value = "GLR · Apache 2.0"' in settings.read_text(encoding="utf-8"),
               "GitHub URL": "https://github.com/love3crystal/AndroidForge" in settings.read_text(encoding="utf-8"),
-              "launcher icon": "GLR" in (app / "src/main/res/drawable/ic_launcher_foreground.xml").read_text(encoding="utf-8") or "pathData=" in (app / "src/main/res/drawable/ic_launcher_foreground.xml").read_text(encoding="utf-8"),
+              "launcher icon": (app / "src/main/res/drawable-nodpi/glr_icon.jpg").exists() and "glr_icon" in (app / "src/main/res/drawable/ic_launcher_foreground.xml").read_text(encoding="utf-8"),
               "APK shrinking": "isMinifyEnabled = true" in gradle.read_text(encoding="utf-8") and "isShrinkResources = true" in gradle.read_text(encoding="utf-8"),
           }
           for name, passed in checks.items():
